@@ -1,4 +1,4 @@
-import multiprocessing
+import multiprocessing.dummy as multiprocessing
 import itertools
 import distutils.ccompiler
 
