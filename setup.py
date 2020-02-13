@@ -261,9 +261,10 @@ if "--fast_multihead_attn" in sys.argv:
         
 if "--parallel" in sys.argv:
     sys.argv.remove("--parallel")
-    import multiprocessing
+    import multiprocessing.dummy as multiprocessing
     import itertools
     import distutils.ccompiler
+    import copy
     # monkey-patch for parallel compilation
     def parallel_compile(self, sources, output_dir=None, macros=None,
                 include_dirs=None, debug=0, extra_preargs=None,
@@ -281,7 +282,8 @@ if "--parallel" in sys.argv:
                 continue
             compile_jobs.append((obj, src, ext, cc_args, extra_postargs, pp_opts))
         with multiprocessing.Pool() as pool:
-            list(pool.map(lambda args: self._compile(*args), compile_jobs))
+            self_copy = copy.copy(self)
+            list(pool.map(lambda args: self_copy._compile(*args), compile_jobs))
 
         # Return *all* object filenames, not just the ones we just built.
         return objects
