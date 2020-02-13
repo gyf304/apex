@@ -264,14 +264,29 @@ if "--parallel" in sys.argv:
     import multiprocessing.dummy as multiprocessing
     import itertools
     import distutils.ccompiler
-    _compile = distutils.ccompiler.CCompiler._compile
     # monkey-patch for parallel compilation
-    def parallel_compile(self, sources, **kwargs):
+    def parallel_compile(self, sources, output_dir=None, macros=None,
+                include_dirs=None, debug=0, extra_preargs=None,
+                extra_postargs=None, depends=None):
+        macros, objects, extra_postargs, pp_opts, build = \
+                self._setup_compile(output_dir, macros, include_dirs, sources,
+                                    depends, extra_postargs)
+        cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
+
+        compile_jobs = []
+        for obj in objects:
+            try:
+                src, ext = build[obj]
+            except KeyError:
+                continue
+            compile_jobs.append((obj, src, ext, cc_args, extra_postargs, pp_opts))
         with multiprocessing.Pool() as pool:
-            pobjects = list(pool.map(lambda source: _compile(self, [source], **kwargs), sources))
-            objects = list(itertools.chain(*pobjects))
+            list(pool.map(lambda args: self._compile(*args), compile_jobs))
+
+        # Return *all* object filenames, not just the ones we just built.
         return objects
-    distutils.ccompiler.CCompiler._compile = parallel_compile
+
+    distutils.ccompiler.CCompiler.compile = parallel_compile
 
 setup(
     name='apex',
