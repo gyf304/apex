@@ -1,25 +1,11 @@
-import multiprocessing.dummy as multiprocessing
-import itertools
-import distutils.ccompiler
-
-_compile = distutils.ccompiler.CCompiler.compile
-
-# monkey-patch for parallel compilation
-def parallel_compile(self, sources, **kwargs):
-    with multiprocessing.Pool() as pool:
-        pobjects = list(pool.map(lambda source: _compile(self, [source], **kwargs), sources))
-        objects = list(itertools.chain(*pobjects))
-    return objects
-
-distutils.ccompiler.CCompiler.compile = parallel_compile
+import os
+import sys
 
 import torch
 from setuptools import setup, find_packages
 import subprocess
 
-import sys
 import warnings
-import os
 
 if not torch.cuda.is_available():
     # https://github.com/NVIDIA/apex/issues/486
@@ -46,6 +32,7 @@ cmdclass = {}
 ext_modules = []
 
 extras = {}
+
 if "--pyprof" in sys.argv:
     with open('requirements.txt') as f:
         required_packages = f.read().splitlines()
@@ -271,6 +258,19 @@ if "--fast_multihead_attn" in sys.argv:
                                                       '--expt-relaxed-constexpr',
                                                       '--expt-extended-lambda',
                                                       '--use_fast_math'] + version_dependent_macros}))
+        
+if "--parallel" in sys.argv:
+    import multiprocessing.dummy as multiprocessing
+    import itertools
+    import distutils.ccompiler
+    _compile = distutils.ccompiler.CCompiler.compile
+    # monkey-patch for parallel compilation
+    def parallel_compile(self, sources, **kwargs):
+        with multiprocessing.Pool() as pool:
+            pobjects = list(pool.map(lambda source: _compile(self, [source], **kwargs), sources))
+            objects = list(itertools.chain(*pobjects))
+        return objects
+    distutils.ccompiler.CCompiler.compile = parallel_compile
 
 setup(
     name='apex',
