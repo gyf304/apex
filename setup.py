@@ -274,16 +274,22 @@ if "--parallel" in sys.argv:
                                     depends, extra_postargs)
         cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
-        compile_jobs = []
+        cuda_compile_jobs = []
+        compile_job = []
         for obj in objects:
             try:
                 src, ext = build[obj]
             except KeyError:
                 continue
-            compile_jobs.append(copy.deepcopy((obj, src, ext, cc_args, extra_postargs, pp_opts)))
+            if ".cu" in src:
+                cuda_compile_jobs.append(copy.deepcopy((obj, src, ext, cc_args, extra_postargs, pp_opts)))
+            else:
+                compile_jobs.append(copy.deepcopy((obj, src, ext, cc_args, extra_postargs, pp_opts)))
         with multiprocessing.Pool() as pool:
-            compile_jobs = [(copy.deepcopy(self), job) for job in compile_jobs]
-            list(pool.map(lambda x: x[0]._compile(*x[1]), compile_jobs))
+            list(pool.map(lambda x: self._compile(*x), compile_jobs))
+            og_compiler = self.compiler_so
+            list(pool.map(lambda x: self._compile(*x), cuda_compile_jobs))
+            self.set_executable('compiler_so', og_compiler)
 
         # Return *all* object filenames, not just the ones we just built.
         return objects
