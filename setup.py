@@ -282,8 +282,8 @@ if "--parallel" in sys.argv:
                 continue
             compile_jobs.append((obj, src, ext, cc_args, extra_postargs, pp_opts))
         with multiprocessing.Pool() as pool:
-            self_copy = copy.copy(self)
-            list(pool.map(lambda args: self_copy._compile(*args), compile_jobs))
+            compile_jobs = [(copy.copy(self), job) for job in compile_jobs]
+            list(pool.map(lambda x: x[0]._compile(*x[1]), compile_jobs))
 
         # Return *all* object filenames, not just the ones we just built.
         return objects
