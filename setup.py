@@ -260,6 +260,7 @@ if "--fast_multihead_attn" in sys.argv:
                                                       '--use_fast_math'] + version_dependent_macros}))
         
 if "--parallel" in sys.argv:
+    sys.argv.remove("--parallel")
     import multiprocessing.dummy as multiprocessing
     import itertools
     import distutils.ccompiler
