@@ -275,7 +275,7 @@ if "--parallel" in sys.argv:
         cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
         cuda_compile_jobs = []
-        compile_job = []
+        compile_jobs = []
         for obj in objects:
             try:
                 src, ext = build[obj]
