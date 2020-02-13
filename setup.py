@@ -1,3 +1,18 @@
+import multiprocessing
+import itertools
+import distutils.ccompiler
+
+_compile = distutils.ccompiler.CCompiler.compile
+
+# monkey-patch for parallel compilation
+def parallel_compile(self, sources, **kwargs):
+    with multiprocessing.Pool() as pool:
+        pobjects = list(pool.map(lambda source: _compile(self, [source], **kwargs), sources))
+        objects = list(itertools.chain(*pobjects))
+    return objects
+
+distutils.ccompiler.CCompiler.compile = parallel_compile
+
 import torch
 from setuptools import setup, find_packages
 import subprocess
