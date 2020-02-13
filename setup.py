@@ -261,7 +261,7 @@ if "--fast_multihead_attn" in sys.argv:
         
 if "--parallel" in sys.argv:
     sys.argv.remove("--parallel")
-    import multiprocessing.dummy as multiprocessing
+    import multiprocessing
     import itertools
     import distutils.ccompiler
     # monkey-patch for parallel compilation
